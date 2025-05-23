@@ -1,0 +1,11 @@
+package com.example.charityapp.repositories;
+
+import com.example.charityapp.entities.ActionCharite;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface ActionChariteRepository extends JpaRepository<ActionCharite, Long> {
+    List<ActionCharite> findByOrganizationId(Long organizationId);
+    List<ActionCharite> findByEstArchiveeFalse();
+}

@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{welcome}">Welcome</title>
+    <!-- Three.js for 3D animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-green: #0e5b3f;
+            --light-green: #1c8e65;
+            --dark-green: #094230;
+            --accent-yellow: #fbd847;
+            --light-yellow: #fde47c;
+            --dark-yellow: #d9b82d;
+            --white: #ffffff;
+            --light-gray: #f3f3f3;
+            --dark-gray: #333333;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--dark-gray);
+            overflow-x: hidden;
+            background-color: var(--white);
+            position: relative;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background-color: var(--accent-yellow);
+        }
+
+        h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        section {
+            padding: 5rem 0;
+            position: relative;
+        }
+
+        /* Layout */
+        .page-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Canvas Background */
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.2;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--accent-yellow);
+            width: 280px;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            color: var(--primary-green);
+            margin-bottom: 3rem;
+            display: inline-block;
+        }
+
+        .logo span {
+            color: var(--dark-green);
+        }
+
+        .nav-links a {
+            display: block;
+            color: var(--primary-green);
+            padding: 0.75rem 0;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-links a:hover {
+            padding-left: 10px;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background-color: var(--primary-green);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 30px;
+        }
+
+        .sidebar-contact {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-contact p {
+            margin-bottom: 0.5rem;
+        }
+
+        .donate-button {
+            display: inline-block;
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            margin-top: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+        }
+
+        .donate-button:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .social-links a {
+            width: 36px;
+            height: 36px;
+            background-color: var(--dark-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-green);
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            background-color: var(--primary-green);
+            color: var(--white);
+            transform: translateY(-3px);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            width: calc(100% - 280px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 100px 0;
+        }
+
+        .hero-content {
+            padding: 5rem;
+            max-width: 600px;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            line-height: 1.1;
+            color: var(--white);
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--accent-yellow);
+            color: var(--primary-green);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+        }
+
+        .cta-button:hover {
+            background-color: var(--light-yellow);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        }
+
+        .hero-image-wrapper {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 60%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .hero-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        /* Stories Section */
+        .stories-section {
+            background-color: var(--white);
+            padding-bottom: 3rem;
+        }
+
+        .section-title-center {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title-center:after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .story-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .story-card {
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        .story-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .story-image {
+            height: 250px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .story-content {
+            padding: 1.5rem;
+        }
+
+        .story-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            padding: 5rem 0;
+            background-color: var(--light-gray);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--dark-gray);
+        }
+
+        /* Support Section */
+        .support-section {
+            background-color: var(--white);
+            padding: 5rem 0;
+        }
+
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .support-card {
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        .support-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .support-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .support-content {
+            padding: 1.5rem;
+        }
+
+        .support-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Donate Section */
+        .donate-section {
+            background-color: var(--light-green);
+            color: var(--white);
+            padding: 5rem 0;
+        }
+
+        .donate-title {
+            color: var(--white);
+        }
+
+        .donate-title:after {
+            background-color: var(--white);
+        }
+
+        .donate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .project-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            color: var(--dark-gray);
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .project-image {
+            height: 180px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .project-content {
+            padding: 1.5rem;
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-description {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-yellow);
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .donate-card-button {
+            display: inline-block;
+            background-color: var(--accent-yellow);
+            color: var(--primary-green);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .donate-card-button:hover {
+            background-color: var(--primary-green);
+            color: var(--white);
+        }
+
+        /* Together Section */
+        .together-section {
+            background-color: var(--white);
+            padding: 5rem 0;
+        }
+
+        .together-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .together-image {
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .impact-list {
+            margin-top: 2rem;
+        }
+
+        .impact-item {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .impact-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--accent-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Team Section */
+        .team-section {
+            background-color: var(--light-gray);
+            padding: 5rem 0;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .team-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .team-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .team-content {
+            padding: 1.5rem;
+        }
+
+        .team-name {
+            font-size: 1.2rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .team-role {
+            color: var(--primary-green);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            background-color: var(--white);
+            padding: 5rem 0;
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .faq-answer {
+            padding-bottom: 1.5rem;
+            display: none;
+        }
+
+        .faq-answer.active {
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--dark-green);
+            color: var(--white);
+            padding: 3rem 0;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .footer-title {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .footer-links a {
+            display: block;
+            color: var(--white);
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            padding-left: 5px;
+        }
+
+        .footer-contact p {
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .slide-in-left.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide-in-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .slide-in-right.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .hero-title {
+                font-size: 3.5rem;
+            }
+
+            .team-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 240px;
+            }
+
+            .main-content {
+                margin-left: 240px;
+                width: calc(100% - 240px);
+            }
+
+            .hero-content {
+                padding: 3rem;
+            }
+
+            .story-grid, .support-grid, .donate-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .together-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .hero-title {
+                font-size: 3rem;
+            }
+
+            .story-grid, .support-grid, .donate-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .language-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .language-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .feature-card {
+            border: none;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Switcher -->
+    <div class="language-switcher">
+        <a th:href="@{/?(lang=en)}" class="btn language-btn" th:text="#{english}">English</a>
+        <a th:href="@{/?(lang=fr)}" class="btn language-btn" th:text="#{french}">French</a>
+    </div>
+
+    <!-- 3D Background Canvas -->
+    <canvas id="background"></canvas>
+
+    <!-- Main Content Structure -->
+    <div class="page-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <a href="#" class="logo">Care<span>For</span>All</a>
+                <ul class="nav-links">
+                    <li><a href="#home" th:text="#{nav.home}">Home</a></li>
+                    <li><a href="#stories" th:text="#{nav.stories}">Our Stories</a></li>
+                    <li><a href="#support" th:text="#{nav.support}">Supporting Those in Need</a></li>
+                    <li><a href="#donate" th:text="#{nav.donate}">Donate</a></li>
+                    <li><a href="#team" th:text="#{nav.team}">Our Team</a></li>
+                    <li><a href="#faq" th:text="#{nav.faq}">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="sidebar-contact">
+                    <p><span th:text="#{contact.email}">Email</span>: info@careforall.org</p>
+                    <p><span th:text="#{contact.phone}">Phone</span>: +212 6304-75003</p>
+                </div>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Twitter">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/>
+                        </svg>
+                    </a>
+                </div>
+                <a href="#donate" class="donate-button" th:text="#{button.donate.now}">Donate Now</a>
+            </div>
+        </aside>
+
+        <!-- Mobile Menu Toggle -->
+        <div class="menu-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section id="home" class="hero-section">
+                <div class="container text-center">
+                    <h1 class="display-4 mb-4" th:text="#{welcome}">Welcome to our Charity Website</h1>
+                    <p class="lead" th:text="#{index.hero.lead}">Making a difference together</p>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="py-5">
+                <div class="container">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card feature-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-hands-helping fa-3x mb-3 text-primary"></i>
+                                    <h5 class="card-title" th:text="#{index.features.mission.title}">Our Mission</h5>
+                                    <p class="card-text" th:text="#{index.features.mission.text}">Helping those in need and making the world a better place.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card feature-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-heart fa-3x mb-3 text-primary"></i>
+                                    <h5 class="card-title" th:text="#{index.features.involved.title}">Get Involved</h5>
+                                    <p class="card-text" th:text="#{index.features.involved.text}">Join our community and make a difference today.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card feature-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-globe fa-3x mb-3 text-primary"></i>
+                                    <h5 class="card-title" th:text="#{index.features.impact.title}">Global Impact</h5>
+                                    <p class="card-text" th:text="#{index.features.impact.text}">Creating positive change around the world.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Button -->
+            <div class="admin-btn">
+                <a th:href="@{/login}" class="btn btn-primary rounded-circle" style="width: 50px; height: 50px; padding: 0;">
+                    <i class="fas fa-user-shield"></i>
+                </a>
+            </div>
+
+            <!-- Stories Section -->
+            <section id="stories" class="stories-section">
+                <div class="container">
+                    <h2 class="section-title-center" th:text="#{section.stories.title}">Stories of Hope and Transformation</h2>
+                    <div class="story-grid">
+                        <div class="story-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Story 1" class="story-image">
+                            <div class="story-content">
+                                <h3 class="story-title" th:text="#{story.school.title}">Building Schools in Rural Communities</h3>
+                                <p th:text="#{story.school.text}">Our education initiative has helped build 24 schools across rural regions, providing quality education to over 5,000 children who previously had no access to schools.</p>
+                                <a href="#" class="read-more" th:text="#{button.read.more}">Read More</a>
+                            </div>
+                        </div>
+                        <div class="story-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=2662&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Story 2" class="story-image">
+                            <div class="story-content">
+                                <h3 class="story-title" th:text="#{story.water.title}">Clean Water for All</h3>
+                                <p th:text="#{story.water.text}">Through our clean water initiative, we've installed over 50 water purification systems, bringing safe drinking water to more than 10,000 people in areas affected by water scarcity.</p>
+                                <a href="#" class="read-more" th:text="#{button.read.more}">Read More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <div class="container">
+                    <div class="stats-container">
+                        <div class="stat-item fade-in">
+                            <div class="stat-number" data-count="2000">0</div>
+                            <div class="stat-label" th:text="#{stats.helped.label}">People Helped</div>
+                        </div>
+                        <div class="stat-item fade-in">
+                            <div class="stat-number" data-count="24">0</div>
+                            <div class="stat-label" th:text="#{stats.projects.label}">Community Projects</div>
+                        </div>
+                        <div class="stat-item fade-in">
+                            <div class="stat-number" data-count="50">0</div>
+                            <div class="stat-label" th:text="#{stats.partners.label}">Partner Organizations</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Support Section -->
+            <section id="support" class="support-section">
+                <div class="container">
+                    <h2 class="section-title-center" th:text="#{section.support.title}">Supporting Those in Need</h2>
+                    <div class="support-grid">
+                        <div class="support-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1122&q=80" alt="Education" class="support-image">
+                            <div class="support-content">
+                                <h3 class="support-title" th:text="#{support.education.title}">Education For All</h3>
+                                <p th:text="#{support.education.text}">We believe education is a fundamental right. Our programs provide access to quality education for underprivileged children around the world.</p>
+                                <a href="#" class="read-more" th:text="#{button.learn.more}">Learn More</a>
+                            </div>
+                        </div>
+                        <div class="support-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80" alt="Healthcare" class="support-image">
+                            <div class="support-content">
+                                <h3 class="support-title" th:text="#{support.healthcare.title}">Healthcare Access</h3>
+                                <p th:text="#{support.healthcare.text}">Our healthcare initiatives provide essential medical services to communities with limited access to healthcare facilities and professionals.</p>
+                                <a href="#" class="read-more" th:text="#{button.learn.more}">Learn More</a>
+                            </div>
+                        </div>
+                        <div class="support-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1593113630400-ea4288922497?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80" alt="Community Development" class="support-image">
+                            <div class="support-content">
+                                <h3 class="support-title" th:text="#{support.community.title}">Community Development</h3>
+                                <p th:text="#{support.community.text}">We work with local communities to develop sustainable infrastructure and economic opportunities that empower residents.</p>
+                                <a href="#" class="read-more" th:text="#{button.learn.more}">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Donate Section -->
+            <section id="donate" class="donate-section">
+                <div class="container">
+                    <h2 class="donate-title section-title-center" th:text="#{section.donate.title}">Donate to Make an Impact</h2>
+                    <div class="donate-grid">
+                        <!-- Start of dynamic cards -->
+                        <div class="project-card fade-in" th:each="action : ${charityActions}">
+                            <img th:src="${action.mediaUrl}" class="project-image" alt="Charity Action Image">
+                            <div class="project-content">
+                                <h3 class="project-title" th:text="${action.title}">Charity Action Title</h3>
+                                <p class="project-description" th:text="${action.description}">Charity Action Description</p>
+                                <div class="progress-bar">
+                                    <!-- Calculate progress percentage if needed, using ${action.currentAmount} and ${action.targetAmount} -->
+                                    <div class="progress-fill" style="width: 75%;"></div> <!-- Placeholder width -->
+                                </div>
+                                <div class="progress-text">
+                                    <span th:text="'\$' + ${action.currentAmount} + ' raised'">Raised: $XXXX</span>
+                                    <span th:text="'\$' + ${action.targetAmount} + ' goal'">Goal: $YYYY</span>
+                                </div>
+                                
+                                <!-- Updated button link -->
+                                <a th:href="@{/donate/{actionId}(actionId=${action.id})}" class="donate-card-button" th:text="#{button.donate.now}">Donate Now</a>
+                            </div>
+                        </div>
+                        <!-- End of dynamic cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Together Section -->
+            <section id="together" class="together-section">
+                <div class="container">
+                    <div class="together-grid">
+                        <div class="together-content fade-in">
+                            <h2 th:text="#{section.together.title}">Together, We Change Lives</h2>
+                            <p th:text="#{together.text}">Our mission is to create lasting change in communities around the world through sustainable development, education, and healthcare initiatives. We believe in empowering people to build better futures for themselves and their communities.</p>
+                            <div class="impact-list">
+                                <div class="impact-item">
+                                    <div class="impact-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 th:text="#{together.sustainable.title}">Sustainable Development</h3>
+                                        <p th:text="#{together.sustainable.text}">We create long-term solutions that continue to benefit communities for generations.</p>
+                                    </div>
+                                </div>
+                                <div class="impact-item">
+                                    <div class="impact-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 th:text="#{together.community.title}">Community Partnerships</h3>
+                                        <p th:text="#{together.community.text}">We work directly with local leaders to ensure our programs address real community needs.</p>
+                                    </div>
+                                </div>
+                                <div class="impact-item">
+                                    <div class="impact-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 th:text="#{together.transparency.title}">Transparency & Accountability</h3>
+                                        <p th:text="#{together.transparency.text}">We are committed to transparent operations and accountability to our donors and beneficiaries.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fade-in">
+                            <img src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80" alt="Together We Change Lives" class="together-image">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Team Section -->
+            <section id="team" class="team-section">
+                <div class="container">
+                    <h2 class="section-title-center" th:text="#{section.team.title}">Our Team</h2>
+                    <div class="team-grid">
+                        <div class="team-card fade-in">
+                            <img src="https://images.unsplash.com/photo-1667983090922-3a996b026a26?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Team Member 4" class="team-image">
+                            <div class="team-content">
+                                <h3 class="team-name" th:text="#{team.member.ayman.name}">Ayman Chakib</h3>
+                                <p class="team-role" th:text="#{team.member.ayman.role}">Development Officer</p>
+                                <p th:text="#{team.member.ayman.description}">Manages donor relationships and fundraising campaigns for major projects.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ Section -->
+            <section id="faq" class="faq-section">
+                <div class="container">
+                    <h2 class="section-title-center" th:text="#{section.faq.title}">Frequently Asked Questions</h2>
+                    <div class="faq-container">
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span th:text="#{faq.q1.question}">How is my donation used?</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p th:text="#{faq.q1.answer}">We are committed to transparency in how your donations are used. At least 85% of all donations go directly to our programs, with the remaining 15% covering essential administrative costs and fundraising efforts. Each project has specific budget allocations that you can review before donating.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span th:text="#{faq.q2.question}">Is my donation tax-deductible?</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p th:text="#{faq.q2.answer}">Yes, CareForAll is a registered 501(c)(3) nonprofit organization, and all donations made by U.S. taxpayers are tax-deductible to the extent allowed by law. You will receive a tax receipt for your donation.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span th:text="#{faq.q3.question}">Can I volunteer instead of donating money?</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p th:text="#{faq.q3.answer}">Absolutely! We welcome volunteers both locally and internationally. We have various opportunities ranging from administrative support to field work depending on your skills and availability. Visit our Volunteer page to learn more about current opportunities and how to apply.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span th:text="#{faq.q4.question}">How can I stay updated on how my donation is being used?</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p th:text="#{faq.q4.answer}">We provide regular updates to our donors through email newsletters, annual reports, and project-specific updates. You can also follow our social media channels for real-time updates and stories from the field. Donors to specific projects receive quarterly progress reports on those initiatives.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span th:text="#{faq.q5.question}">Can I specify which project my donation goes to?</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p th:text="#{faq.q5.answer}">Yes, you can designate your donation to a specific project or program. During the donation process, you'll have the option to select which initiative you'd like to support. If you prefer, you can also make an unrestricted donation that allows us to allocate funds where they're needed most.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="container">
+                    <div class="footer-grid">
+                        <div>
+                            <h3 class="footer-title" th:text="#{footer.title.careforall}">CareForAll</h3>
+                            <p th:text="#{footer.text}">Transforming lives through sustainable development, education, and healthcare initiatives around the world.</p>
+                            <div class="social-links">
+                                <a href="#" aria-label="Facebook">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" aria-label="Twitter">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" aria-label="Instagram">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="footer-title" th:text="#{footer.title.quicklinks}">Quick Links</h3>
+                            <ul class="footer-links">
+                                <li><a href="#home" th:text="#{nav.home}">Home</a></li>
+                                <li><a href="#stories" th:text="#{nav.stories}">Our Stories</a></li>
+                                <li><a href="#support" th:text="#{nav.support}">Our Initiatives</a></li>
+                                <li><a href="#donate" th:text="#{nav.donate}">Donate</a></li>
+                                <li><a href="#team" th:text="#{nav.team}">Our Team</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="footer-title" th:text="#{footer.title.getinvolved}">Get Involved</h3>
+                            <ul class="footer-links">
+                                <li><a href="#" th:text="#{footer.link.volunteer}">Volunteer</a></li>
+                                <li><a href="#" th:text="#{footer.link.partner}">Partner With Us</a></li>
+                                <li><a href="#" th:text="#{footer.link.corporate}">Corporate Sponsorship</a></li>
+                                <li><a href="#" th:text="#{footer.link.fundraise}">Fundraise</a></li>
+                                <li><a href="#" th:text="#{footer.link.planned}">Planned Giving</a></li>
+                            </ul>
+                        </div>
+                        <div class="footer-contact">
+                            <h3 class="footer-title" th:text="#{footer.title.contact}">Contact Us</h3>
+                            <p>123 Charity Street, Suite 101</p>
+                            <p>New York, NY 10001</p>
+                            <p th:text="'Email: ' + #{contact.email}">Email: info@careforall.org</p>
+                            <p th:text="'Phone: ' + #{contact.phone}">Phone: +212 6304-75003</p>
+                        </div>
+                    </div>
+                    <div class="copyright">
+                        <p th:text="#{footer.copyright}">&copy; 2025 CareForAll. All rights reserved.</p>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Initialize 3D Background
+        const initThreeBackground = () => {
+            const canvas = document.getElementById('background');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Create particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 2000;
+            const posArray = new Float32Array(particlesCount * 3);
+
+            for (let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 15;
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+            // Materials
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0x0e5b3f,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            // Mesh
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            // Create abstract shape for visual interest
+            const torusGeometry = new THREE.TorusKnotGeometry(3, 0.6, 100, 16);
+            const torusMaterial = new THREE.MeshBasicMaterial({
+                color: 0xfbd847,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.1
+            });
+            const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+            scene.add(torus);
+
+            camera.position.z = 5;
+
+            // Mouse movement effect
+            let mouseX = 0;
+            let mouseY = 0;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            // Animation loop
+            const animate = () => {
+                requestAnimationFrame(animate);
+
+                // Rotate particles
+                particlesMesh.rotation.x += 0.0005;
+                particlesMesh.rotation.y += 0.0003;
+
+                // Rotate torus
+                torus.rotation.x += 0.001;
+                torus.rotation.y += 0.0015;
+
+                // React to mouse movement
+                torus.rotation.x += mouseY * 0.001;
+                torus.rotation.y += mouseX * 0.001;
+
+                // Render scene
+                renderer.render(scene, camera);
+            };
+
+            animate();
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        };
+
+        // Scroll animations
+        const handleScrollAnimations = () => {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            const slideLeftElements = document.querySelectorAll('.slide-in-left');
+            const slideRightElements = document.querySelectorAll('.slide-in-right');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            fadeElements.forEach(element => observer.observe(element));
+            slideLeftElements.forEach(element => observer.observe(element));
+            slideRightElements.forEach(element => observer.observe(element));
+        };
+
+        // Animate statistics counters
+        const animateCounters = () => {
+            const counters = document.querySelectorAll('.stat-number');
+            const speed = 200; // Lower is faster
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const target = parseInt(entry.target.getAttribute('data-count'));
+                        const count = +entry.target.innerText;
+                        const increment = Math.trunc(target / speed);
+
+                        if (count < target) {
+                            entry.target.innerText = count + increment;
+                            setTimeout(() => animateCounters(), 1);
+                        } else {
+                            entry.target.innerText = target;
+                        }
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            counters.forEach(counter => observer.observe(counter));
+        };
+
+        // FAQ accordion
+        const setupFAQ = () => {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const answer = question.nextElementSibling;
+                    const isActive = answer.classList.contains('active');
+
+                    // Close all answers
+                    document.querySelectorAll('.faq-answer').forEach(ans => {
+                        ans.classList.remove('active');
+                    });
+
+                    // Toggle the clicked answer
+                    if (!isActive) {
+                        answer.classList.add('active');
+                    }
+                });
+            });
+        };
+
+        // Mobile menu toggle
+        const setupMobileMenu = () => {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+        };
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeBackground();
+            handleScrollAnimations();
+            animateCounters();
+            setupFAQ();
+            setupMobileMenu();
+
+            // Activate first few elements immediately
+            setTimeout(() => {
+                document.querySelectorAll('.hero .fade-in').forEach(el => {
+                    el.classList.add('active');
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>
